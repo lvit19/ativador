@@ -1,0 +1,205 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ativação de Cliente - GTR Net</title>
+    <style>
+        /* Estilos com a identidade visual GTR Net (Verde) */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #1e894a;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem;
+        }
+        .form-container {
+            background-color: #ffffff;
+            padding: 2.5rem;
+            border-radius: 10px;
+            box-shadow: 0 4px_15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 450px;
+            box-sizing: border-box;
+        }
+        /* NOVO: Estilo para o container da logo */
+        .logo-container {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        .logo-container img {
+            max-width: 220px;
+            height: auto;
+        }
+        .form-container h1 {
+            text-align: center;
+            color: #1a2533;
+            margin-bottom: 2rem;
+            font-size: 1.8rem;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #555;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #1e894a; /* COR ALTERADA */
+            box-shadow: 0 0 5px rgba(30, 137, 74, 0.5); /* COR ALTERADA */
+        }
+        .submit-button {
+            width: 100%;
+            padding: 1rem;
+            background-color: #1e894a; /* COR ALTERADA */
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .submit-button:hover {
+            background-color: #176d39; /* COR ALTERADA (TOM MAIS ESCURO) */
+        }
+        .submit-button:disabled {
+            background-color: #a0a0a0;
+            cursor: not-allowed;
+        }
+        .fieldset {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .fieldset legend {
+            font-weight: 600;
+            color: #1e894a; /* COR ALTERADA */
+            padding: 0 0.5rem;
+        }
+        #form-status {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: 600;
+            display: none;
+        }
+        #form-status.success {
+            background-color: #d4edda;
+            color: #155724;
+            display: block;
+        }
+        #form-status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="form-container">
+        
+        <div class="logo-container">
+            <img src="https://gtrnet.com.br/wp-content/uploads/2025/04/23cdbca9-abf0-415c-aaff-1e106f1b4880-1.jpg" alt="Logo GTR Net">
+        </div>
+
+        <h1>Ativação de Equipamento</h1>
+
+        <form id="activation-form" action="https://n8n-n8n.5nvqec.easypanel.host/webhook/atv-ppoe" method="POST">
+            
+            <fieldset class="fieldset">
+                <legend>Credenciais PPPoE</legend>
+                <div class="form-group">
+                    <label for="pppoe_user">Login PPPoE</label>
+                    <input type="text" id="pppoe_user" name="pppoe_user" placeholder="Ex: cliente.nome" required>
+                </div>
+                </fieldset>
+
+            <fieldset class="fieldset">
+                <legend>Configuração do Wi-Fi</legend>
+                <div class="form-group">
+                    <label for="wifi_ssid">Nome da Rede (SSID)</label>
+                    <input type="text" id="wifi_ssid" name="wifi_ssid" placeholder="Ex: GTR Net Cliente" required>
+                </div>
+                <div class="form-group">
+                    <label for="wifi_password">Senha do Wi-Fi</label>
+                    <input type="password" id="wifi_password" name="wifi_password" placeholder="Mínimo 8 caracteres" required>
+                </div>
+            </fieldset>
+
+            <fieldset class="fieldset">
+                <legend>Identificação do Equipamento</legend>
+                <div class="form-group">
+                    <label for="serial_number">Serial Number (S/N)</label>
+                    <input type="text" id="serial_number" name="serial_number" placeholder="Digite ou escaneie o S/N" required>
+                </div>
+            </fieldset>
+
+            <button type="submit" class="submit-button">Ativar Equipamento</button>
+
+            <div id="form-status"></div>
+
+        </form>
+    </div>
+
+    <script>
+        const form = document.getElementById('activation-form');
+        const statusMessage = document.getElementById('form-status');
+        const submitButton = form.querySelector('.submit-button');
+
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            submitButton.disabled = true;
+            submitButton.textContent = 'Enviando...';
+            statusMessage.style.display = 'none';
+
+            const formData = new FormData(form);
+            
+            fetch(form.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.text();
+                }
+                throw new Error('Falha na comunicação com o servidor.');
+            })
+            .then(data => {
+                statusMessage.textContent = 'Equipamento configurado com sucesso!';
+                statusMessage.className = 'success';
+                form.reset();
+            })
+            .catch(error => {
+                statusMessage.textContent = 'Erro ao ativar: ' + error.message;
+                statusMessage.className = 'error';
+            })
+            .finally(() => {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Ativar Equipamento';
+            });
+        });
+    </script>
+
+</body>
+</html>
