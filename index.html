@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -49,7 +49,6 @@
             margin-bottom: 0.5rem;
             color: #555;
         }
-        /* ===== SELETOR ATUALIZADO PARA INCLUIR O 'select' ===== */
         .form-group input,
         .form-group select {
             width: 100%;
@@ -59,17 +58,17 @@
             font-size: 1rem;
             box-sizing: border-box;
             transition: border-color 0.3s, box-shadow 0.3s;
-            /* Para que o select não pareça diferente no iOS */
             -webkit-appearance: none;
             -moz-appearance: none;
             appearance: none;
             background-color: #fff;
+        }
+        .form-group select {
             background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M5%208l5%205%205-5z%22%20fill%3D%22%23555%22/%3E%3C/svg%3E');
             background-repeat: no-repeat;
             background-position: right 0.7em top 50%, 0 0;
             background-size: 1.2em auto, 100%;
         }
-        /* ===== SELETOR ATUALIZADO PARA INCLUIR O 'select' ===== */
         .form-group input:focus,
         .form-group select:focus {
             outline: none;
@@ -181,7 +180,7 @@
                 </div>
                 <div class="form-group">
                     <label for="wifi_password">Senha do Wi-Fi</label>
-                    <input type="text" id="wifi_password" name="wifi_password" placeholder="Mínimo 8 caracteres" required>
+                    <input type="text" id="wifi_password" name="wifi_password" placeholder="Mínimo 8 caracteres, com letras e números" required>
                 </div>
             </fieldset>
 
@@ -193,43 +192,69 @@
     </div>
 
     <script>
-        const form = document.getElementById('activation-form');
-        const statusMessage = document.getElementById('form-status');
-        const submitButton = form.querySelector('.submit-button');
+    const form = document.getElementById('activation-form');
+    const statusMessage = document.getElementById('form-status');
+    const submitButton = form.querySelector('.submit-button');
 
-        form.addEventListener('submit', function(event) {
-            event.preventDefault();
-            submitButton.disabled = true;
-            submitButton.textContent = 'Enviando...';
-            statusMessage.style.display = 'none';
+    // A função do evento agora é 'async' para podermos usar 'await' dentro dela.
+    form.addEventListener('submit', async function(event) {
+        event.preventDefault();
+        
+        // --- Validação da Senha (continua igual) ---
+        const wifiPassword = document.getElementById('wifi_password').value;
+        const temLetra = /[a-zA-Z]/.test(wifiPassword);
+        const temNumero = /\d/.test(wifiPassword);
+        if (wifiPassword.length < 8 || !temLetra || !temNumero) {
+            statusMessage.textContent = 'Senha inválida! Requisitos: Mínimo 8 caracteres, contendo letras e números.';
+            statusMessage.className = 'error';
+            statusMessage.style.display = 'block';
+            return; 
+        }
+        // --- Fim da Validação ---
 
+        // Desabilita o botão e prepara para o envio
+        submitButton.disabled = true;
+        submitButton.textContent = 'Enviando...';
+        statusMessage.style.display = 'none';
+
+        // Usamos um bloco try...catch para tratar sucesso e erro de forma mais limpa
+        try {
             const formData = new FormData(form);
             
-            fetch(form.action, {
+            // 'await' pausa a execução aqui até a resposta do fetch chegar
+            const response = await fetch(form.action, {
                 method: 'POST',
                 body: formData
-            })
-            .then(response => {
-                if (response.ok) {
-                    return response.text();
-                }
-                throw new Error('Falha na comunicação com o servidor.');
-            })
-            .then(data => {
-                statusMessage.textContent = 'Equipamento configurado com sucesso!';
-                statusMessage.className = 'success';
-                form.reset();
-            })
-            .catch(error => {
-                statusMessage.textContent = 'Erro ao ativar: ' + error.message;
-                statusMessage.className = 'error';
-            })
-            .finally(() => {
-                submitButton.disabled = false;
-                submitButton.textContent = 'Ativar Equipamento';
             });
-        });
-    </script>
+
+            // Se a resposta NÃO for 'ok' (ex: status 400), entramos aqui
+            if (!response.ok) {
+                // 'await' para esperar o corpo do JSON ser lido
+                const errorData = await response.json();
+                // Lança um erro com a mensagem do n8n. Isso pulará direto para o bloco 'catch'
+                throw new Error(errorData.message || 'Ocorreu um erro desconhecido.');
+            }
+
+            // Se o código chegou até aqui, significa que a resposta foi 'ok' (sucesso)
+            const successData = await response.text();
+            statusMessage.textContent = 'Equipamento configurado com sucesso!';
+            statusMessage.className = 'success';
+            form.reset();
+
+        } catch (error) {
+            // O bloco 'catch' captura QUALQUER erro que acontecer no 'try',
+            // incluindo o erro que nós mesmos lançamos ('throw new Error').
+            statusMessage.textContent = error.message;
+            statusMessage.className = 'error';
+        } finally {
+            // O bloco 'finally' sempre executa no final, seja sucesso ou falha.
+            submitButton.disabled = false;
+            submitButton.textContent = 'Ativar Equipamento';
+            // Garante que a mensagem de status (seja de erro ou sucesso) esteja visível.
+            statusMessage.style.display = 'block';
+        }
+    });
+	</script>
 
 </body>
 </html>
